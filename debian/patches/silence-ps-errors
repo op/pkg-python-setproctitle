@@ -1,0 +1,20 @@
+Description: ps might give warnings, let's remove those.
+ http://bugs.debian.org/460331
+Author: Örjan Persson <orange@fobie.net>
+Last-Update: 2010-05-28
+Index: python-setproctitle/tests/setproctitle_test.py
+===================================================================
+--- python-setproctitle.orig/tests/setproctitle_test.py	2010-05-28 23:50:03.000000000 +0200
++++ python-setproctitle/tests/setproctitle_test.py	2010-05-28 23:50:23.000000000 +0200
+@@ -38,9 +38,10 @@
+             
+             import os
+             print os.getpid()
+-            print os.popen("ps -o pid,command").read()
++            print os.popen("ps -o pid,command 2> /dev/null").read()
+             """)
+         lines = filter(None, rv.splitlines())
++        print 'ps output:', lines
+         pid = lines.pop(0)
+         pids = dict([r.strip().split(None, 1) for r in lines])
+ 

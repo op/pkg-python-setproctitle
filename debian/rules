@@ -1,0 +1,21 @@
+#!/usr/bin/make -f
+
+PYVERSIONS := $(shell pyversions -sv)
+
+%:
+	dh  $@
+
+override_dh_installchangelogs:
+	dh_installchangelogs HISTORY
+
+override_dh_auto_test: $(PYVERSIONS:%=test-%-stamp)
+test-%-stamp:	
+ifeq (,$(findstring nocheck,$(DEB_BUILD_OPTIONS)))
+	rm -rf build/test-$*
+	mkdir build/test-$*
+	python$* setup.py install_lib -d build/test-$*
+	PYTHONPATH=build/test-$* python$* /usr/bin/nosetests -v tests
+	touch test-python-$*-stamp
+endif
+
+.PHONY: override_dh_installchangelogs override_dh_auto_test

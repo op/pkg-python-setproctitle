@@ -1,0 +1,20 @@
+Source: python-setproctitle
+Section: python
+Priority: extra
+Maintainer: Örjan Persson <orange@fobie.net>
+Uploaders: Andreas Schuldei <andreas@debian.org>
+Build-Depends: debhelper (>= 7.0.50), python-all-dev, gcc (>= 4), python-support, python-nose, procps
+Standards-Version: 3.8.4
+Homepage: http://code.google.com/p/py-setproctitle/
+
+Package: python-setproctitle
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: A setproctitle implementation for Python
+ The library allows a process to change its title (as displayed by system tools
+ such as ps and top).
+ .
+ Changing the title is mostly useful in multi-process systems, for example when
+ a master process is forked: changing the children's title allows to identify
+ the task each process is busy with. The technique is used by PostgreSQL and
+ the OpenSSH Server for example. 
