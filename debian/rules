@@ -5,6 +5,12 @@ PYVERSIONS := $(shell pyversions -sv)
 %:
 	dh  $@
 
+override_dh_auto_clean: $(PYVERSIONS:%=clean-%-stamp)
+	dh_auto_clean
+
+clean-%-stamp:
+	rm -rf build/test-$*
+
 override_dh_installchangelogs:
 	dh_installchangelogs HISTORY
 
@@ -18,4 +24,4 @@ ifeq (,$(findstring nocheck,$(DEB_BUILD_OPTIONS)))
 	touch test-python-$*-stamp
 endif
 
-.PHONY: override_dh_installchangelogs override_dh_auto_test
+.PHONY: override_dh_auto_clean override_dh_installchangelogs override_dh_auto_test
