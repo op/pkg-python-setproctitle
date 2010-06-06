@@ -1,3 +1,11 @@
+python-setproctitle (1.0.1-1) unstable; urgency=low
+
+  * New upstream version.
+  * Added missing dependency for python, thanks to Sven Joachim for reporting
+    this (Closes: #584078).
+
+ -- Örjan Persson <orange@fobie.net>  Sun, 06 Jun 2010 15:11:20 +0200
+
 python-setproctitle (1.0-2) unstable; urgency=low
 
   * Fixed problem when building package more than once, thanks to Jakub Wilk
