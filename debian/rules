@@ -14,6 +14,9 @@ clean-%-stamp:
 override_dh_installchangelogs:
 	dh_installchangelogs HISTORY
 
+override_dh_strip:
+	dh_strip --dbg-package=python-setproctitle-dbg
+
 override_dh_auto_test: $(PYVERSIONS:%=test-%-stamp)
 test-%-stamp:	
 ifeq (,$(findstring nocheck,$(DEB_BUILD_OPTIONS)))
@@ -26,4 +29,4 @@ endif
 	touch test-python-$*-stamp
 endif
 
-.PHONY: override_dh_auto_clean override_dh_installchangelogs override_dh_auto_test
+.PHONY: override_dh_auto_clean override_dh_installchangelogs override_dh_strip override_dh_auto_test
