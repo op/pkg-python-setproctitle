@@ -5,6 +5,7 @@ python-setproctitle (1.0.1-1) unstable; urgency=low
     this (Closes: #584078).
   * Fixed problem when building package more than once, thanks to Jakub Wilk
     for reporting this (Closes: #583887).
+  * Disabled tests for kfreebsd until setproctitle is fixed in libbsd.
 
  -- Örjan Persson <orange@fobie.net>  Mon, 31 May 2010 20:58:30 +0200
 

@@ -20,7 +20,9 @@ ifeq (,$(findstring nocheck,$(DEB_BUILD_OPTIONS)))
 	rm -rf build/test-$*
 	mkdir build/test-$*
 	python$* setup.py install_lib -d build/test-$*
+ifeq (,$(findstring kfreebsd,$(shell dpkg-architecture -qDEB_BUILD_ARCH_OS)))
 	PYTHONPATH=build/test-$* python$* /usr/bin/nosetests -v tests
+endif
 	touch test-python-$*-stamp
 endif
 
