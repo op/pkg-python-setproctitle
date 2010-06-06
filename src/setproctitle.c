@@ -3,7 +3,7 @@
  * setproctitle.c
  *    Python extension module to update and read the process title.
  *
- * Copyright (c) 2009 Daniele Varrazzo <daniele.varrazzo@gmail.com>
+ * Copyright (c) 2009-2010 Daniele Varrazzo <daniele.varrazzo@gmail.com>
  *
  * The module allows Python code to access the functions get_ps_display()
  * and set_ps_display().  The process title initialization (functions
@@ -108,6 +108,29 @@ join_argv(int argc, char **argv)
 }
 
 
+/* Return a copy of argv referring to the original arg area.
+ *
+ * python -m messes up with arg (issue #8): ensure to have a vector to the
+ * original args or save_ps_display_args() will stop processing too soon.
+ *
+ * Return a buffer allocated with malloc: should be cleaned up with free()
+ * (it is never released though).
+ */
+static char **
+fix_argv(int argc, char **argv)
+{
+    char **buf = (char **)malloc(argc * sizeof(char *));
+    int i;
+    char *ptr = argv[0];
+    for (i = 0; i < argc; ++i) {
+        buf[i] = ptr;
+        ptr += strlen(ptr) + 1;
+    }
+
+    return buf;
+}
+
+
 /* Initialization function for the module (*must* be called initsetproctitle) */
 
 static char setproctitle_module_documentation[] =
@@ -120,9 +143,8 @@ initsetproctitle(void)
     PyObject *m, *d;
 
     /* Create the module and add the functions */
-    m = Py_InitModule4("setproctitle", spt_methods,
-        setproctitle_module_documentation,
-        (PyObject*)NULL,PYTHON_API_VERSION);
+    m = Py_InitModule3("setproctitle", spt_methods,
+        setproctitle_module_documentation);
 
     /* Add version string to the module*/
     d = PyModule_GetDict(m);
@@ -134,6 +156,7 @@ initsetproctitle(void)
     int argc;
     char **argv;
     Py_GetArgcArgv(&argc, &argv);
+    argv = fix_argv(argc, argv);
     save_ps_display_args(argc, argv);
 
     /* Set up the first title to fully initialize the code */

@@ -2,18 +2,20 @@
 
 Use nosetests to run this test suite.
 
-Copyright (c) 2009 Daniele Varrazzo <daniele.varrazzo@gmail.com>
+Copyright (c) 2009-2010 Daniele Varrazzo <daniele.varrazzo@gmail.com>
 """
 
 import os
 import re
 import sys
+import shutil
+import tempfile
 import unittest
 from subprocess import Popen, PIPE, STDOUT
 
 from nose.plugins.skip import SkipTest
 
-class GetProcTitleTestCase(unittest.TestCase):
+class SetproctitleTestCase(unittest.TestCase):
     def test_runner(self):
         """Test the script execution method."""
         rv = self.run_script("""
@@ -35,22 +37,18 @@ class GetProcTitleTestCase(unittest.TestCase):
         rv = self.run_script(r"""
             import setproctitle
             setproctitle.setproctitle('Hello, world!')
-            
+
             import os
             print os.getpid()
-            print os.popen("ps -o pid,command").read()
+            # ps can fail on kfreebsd arch
+            # (http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=460331)
+            print os.popen("ps -o pid,command 2> /dev/null").read()
             """)
         lines = filter(None, rv.splitlines())
         pid = lines.pop(0)
         pids = dict([r.strip().split(None, 1) for r in lines])
 
-        title = pids[pid]
-        if 'bsd' in sys.platform:
-            # BSD's setproctitle decorates the title with the process name
-            procname = os.path.basename(sys.executable)
-            title = ' '.join([t for t in title.split(' ')
-                if procname not in t])  
-
+        title = self._clean_up_title(pids[pid])
         self.assertEqual(title, "Hello, world!")
 
     def test_prctl(self):
@@ -112,7 +110,40 @@ class GetProcTitleTestCase(unittest.TestCase):
         self.assertEqual(test, 'setenv-value')
         self.assert_(path.endswith('fakepath'), path)
 
-    def run_script(self, script, args=None):
+    def test_issue_8(self):
+        """Test that the module works with 'python -m'."""
+        module = 'spt_issue_8'
+        pypath = os.environ.get('PYTHONPATH', None)
+        dir = tempfile.mkdtemp()
+        os.environ['PYTHONPATH'] = dir + os.pathsep + (pypath or '')
+        try:
+            open(dir + '/' + module + '.py', 'w').write(
+                self._clean_whitespaces(r"""
+                    import setproctitle
+                    setproctitle.setproctitle("Hello, module!")
+
+                    import os
+                    print os.getpid()
+                    print os.popen("ps -o pid,command 2> /dev/null").read()
+                """))
+
+            rv = self.run_script(args="-m " + module)
+            lines = filter(None, rv.splitlines())
+            pid = lines.pop(0)
+            pids = dict([r.strip().split(None, 1) for r in lines])
+
+            title = self._clean_up_title(pids[pid])
+            self.assertEqual(title, "Hello, module!")
+
+        finally:
+            shutil.rmtree(dir, ignore_errors=True)
+            if pypath is not None:
+                os.environ['PYTHONPATH'] = pypath
+            else:
+                del os.environ['PYTHONPATH']
+
+
+    def run_script(self, script=None, args=None):
         """run a script in a separate process.
 
         if the script completes successfully, return the concatenation of
@@ -122,10 +153,12 @@ class GetProcTitleTestCase(unittest.TestCase):
         if args:
             cmdline = cmdline + " " + args
 
-        script = self._clean_whitespaces(script)
         proc = Popen(cmdline,
                 stdin=PIPE, stdout=PIPE, stderr=STDOUT,
                 shell=True, close_fds=True)
+
+        if script is not None:
+            script = self._clean_whitespaces(script)
 
         out = proc.communicate(script)[0]
         if 0 != proc.returncode:
@@ -157,6 +190,24 @@ class GetProcTitleTestCase(unittest.TestCase):
                         % (i + 1, line.strip()))
             script[i] = line[len(spaces):]
 
+        # drop final blank lines: they produce import errors
+        while script and script[-1].isspace():
+            del script[-1]
+
         assert not script[0][0].isspace(), script[0]
         return ''.join(script)
 
+    def _clean_up_title(self, title):
+        """Clean up a string from the prefix added by the platform.
+        """
+        # BSD's setproctitle decorates the title with the process name.
+        if 'bsd' in sys.platform:
+            procname = os.path.basename(sys.executable)
+            title = ' '.join([t for t in title.split(' ')
+                if procname not in t])  
+
+        return title
+
+
+if __name__ == '__main__':
+    unittest.main()
