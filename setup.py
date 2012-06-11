@@ -2,10 +2,10 @@
 """
 setproctitle setup script.
 
-Copyright (c) 2009-2010 Daniele Varrazzo <daniele.varrazzo@gmail.com>
+Copyright (c) 2009-2012 Daniele Varrazzo <daniele.varrazzo@gmail.com>
 """
 
-VERSION = '1.0.1'
+VERSION = '1.1.6'
 
 import os
 import re
@@ -16,11 +16,11 @@ define_macros={}
 
 define_macros['SPT_VERSION'] = VERSION
 
-if sys.platform == 'linux2':
+if sys.platform.startswith('linux'):
     try:
-        linux_version = map(int, 
+        linux_version = list(map(int,
             re.search("[.0-9]+", os.popen("uname -r").read())
-                .group().split(".")[:3])
+                .group().split(".")[:3]))
     except:
         pass
     else:
@@ -35,7 +35,7 @@ elif 'bsd' in sys.platform: # OMG, how many of them are?
     # Old BSD versions don't have setproctitle
     # TODO: not tested on an "old BSD"
     if 0 == os.spawnlp(os.P_WAIT, 'grep',
-            'grep', '-q', 'setproctitle', '/usr/include/unistd.h'):
+            'grep', '-q', 'setproctitle', '/usr/include/unistd.h', '/usr/include/stdlib.h'):
         define_macros['HAVE_SETPROCTITLE'] = 1
     else:
         define_macros['HAVE_PS_STRING'] = 1
@@ -46,9 +46,11 @@ elif 'bsd' in sys.platform: # OMG, how many of them are?
 # But I have none handy to test with.
 
 mod_spt = Extension('setproctitle',
-    define_macros=define_macros.items(),
+    define_macros=list(define_macros.items()),
     sources = [
         'src/setproctitle.c',
+        'src/spt_debug.c',
+        'src/spt_setup.c',
         'src/spt_status.c',
         'src/strlcpy.c', # TODO: not needed on some platform
         ])
@@ -62,17 +64,17 @@ if sys.version < '2.2.3':
 
 # Try to include the long description in the setup
 kwargs = {}
-try: 
+try:
     kwargs['long_description'] = (
-        open('README').read()
+        open('README.rst').read()
         + '\n'
-        +open('HISTORY').read())
-except: 
+        +open('HISTORY.rst').read())
+except:
     pass
 
 setup(
     name = 'setproctitle',
-    description = 'Allow customization of the process title.',
+    description = 'A library to allow customization of the process title.',
     version = VERSION,
     author = 'Daniele Varrazzo',
     author_email = 'daniele.varrazzo@gmail.com',
@@ -80,17 +82,18 @@ setup(
     download_url = 'http://pypi.python.org/pypi/setproctitle/',
     license = 'BSD',
     platforms = ['GNU/Linux', 'BSD', 'MacOS X', 'Windows'],
-    classifiers = filter(None, map(str.strip, """
+    classifiers = [ r for r in map(str.strip, """
         Development Status :: 5 - Production/Stable
         Intended Audience :: Developers
         License :: OSI Approved :: BSD License
         Programming Language :: C
         Programming Language :: Python
+        Programming Language :: Python :: 3
         Operating System :: POSIX :: Linux
         Operating System :: POSIX :: BSD
         Operating System :: MacOS :: MacOS X
         Operating System :: Microsoft :: Windows
         Topic :: Software Development
-        """.splitlines())),
+        """.splitlines()) if r],
     ext_modules = [mod_spt],
     **kwargs)
