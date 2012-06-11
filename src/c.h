@@ -3,12 +3,14 @@
  * c.h
  *    A few fundamental C definitions.
  *
- * Copyright (c) 2009-2010 Daniele Varrazzo <daniele.varrazzo@gmail.com>
+ * Copyright (c) 2009-2012 Daniele Varrazzo <daniele.varrazzo@gmail.com>
  *-------------------------------------------------------------------------
  */
 
 #ifndef C_H
 #define C_H
+
+#include "spt_config.h"
 
 #ifndef __cplusplus
 
@@ -28,7 +30,7 @@ typedef char bool;
 #include <stddef.h>
 
 #if !HAVE_DECL_STRLCPY
-extern size_t strlcpy(char *dst, const char *src, size_t siz);
+HIDDEN extern size_t strlcpy(char *dst, const char *src, size_t siz);
 #endif
 
 #ifdef WIN32

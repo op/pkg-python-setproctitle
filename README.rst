@@ -15,9 +15,15 @@ The procedure is hardly portable across different systems.  PostgreSQL provides
 a good `multi-platform implementation`__:  this module is a Python wrapper
 around PostgreSQL code.
 
+- `Homepage <http://code.google.com/p/py-setproctitle/>`__
+- `Download <http://pypi.python.org/pypi/setproctitle/>`__
+- `Source repository <https://github.com/dvarrazzo/py-setproctitle>`__
+- `Bug tracker <http://code.google.com/p/py-setproctitle/issues/list>`__
+
+
 .. _PostgreSQL: http://www.postgresql.org
 .. _OpenSSH Server: http://www.openssh.com/
-.. __: http://doxygen.postgresql.org/ps__status_8c-source.html
+.. __: http://doxygen.postgresql.org/ps__status_8c_source.html
 
 
 Installation
@@ -33,21 +39,57 @@ environment, you can use the command::
 
     easy_install -d /target/path setproctitle
 
-Notice that ``easy_install`` requires ``/target/path`` to be in your 
+Note that ``easy_install`` requires ``/target/path`` to be in your
 ``PYTHONPATH``.
 
 
-Module content
---------------
+Python 3 support
+~~~~~~~~~~~~~~~~
 
-The module exports the following functions:
+As of version 1.1 the module works with Python 3.  In order to install the
+module, you can use the `distribute`_ replacemente for ``easy_install``.
+
+In order to build and test the module under Python 3, the ``Makefile``
+contains some helper targets.
+
+.. _distribute: http://pypi.python.org/pypi/distribute
+
+
+Usage
+-----
+
+The ``setproctitle`` module exports the following functions:
 
 ``setproctitle(title)``
     Set *title* as the title for the current process.
 
-
 ``getproctitle()``
     Return the current process title.
+
+
+Environment variables
+~~~~~~~~~~~~~~~~~~~~~
+
+A few environment variables can be used to customize the module behavior:
+
+``SPT_NOENV``
+    Avoid clobbering ``/proc/PID/environ``.
+
+    On many platforms, setting the process title will clobber the
+    ``environ`` memory area. ``os.environ`` will work as expected from within
+    the Python process, but the content of the file ``/proc/PID/environ`` will
+    be overwritten.  If you require this file not to be broken you can set the
+    ``SPT_NOENV`` environment variable to any non-empty value: in this case
+    the maximum length for the title will be limited to the length of the
+    command line.
+
+``SPT_DEBUG``
+    Print debug information on ``stderr``.
+
+    If the module doesn't work as expected you can set this variable to a
+    non-empty value to generate information useful for debugging.  Note that
+    the most useful information is printed when the module is imported, not
+    when the functions are called.
 
 
 Module status
@@ -61,7 +103,7 @@ platforms:
 - MacOS X
 - Windows
 
-Notice that on Windows there is no way to change the process string:
+Note that on Windows there is no way to change the process string:
 what the module does is to create a *Named Object* whose value can be read
 using a tool such as `Process Explorer`_ (contribution of a more useful tool
 to be used together with ``setproctitle`` would be well accepted).
