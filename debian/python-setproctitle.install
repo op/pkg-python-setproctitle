@@ -1,1 +1,2 @@
-debian/tmp/usr/lib
+usr/lib/python2*/*/*.egg-info
+usr/lib/python2*/*/setproctitle.so

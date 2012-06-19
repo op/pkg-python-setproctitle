@@ -1,32 +1,68 @@
 #!/usr/bin/make -f
 
-PYVERSIONS := $(shell pyversions -sv)
+PYVERSIONS := $(shell pyversions -vr debian/control)
+PY3VERSIONS := $(shell py3versions -vr debian/control)
 
 %:
-	dh  $@
+	dh $@ --with python3
 
-override_dh_auto_clean: $(PYVERSIONS:%=clean-%-stamp)
+override_dh_auto_clean:
 	dh_auto_clean
+	for v in $(PY3VERSIONS); do \
+		rm -rf py3-$$v; \
+	done
+	for v in $(PYVERSIONS) $(PY3VERSIONS); do \
+		rm -rf build/test.$$v; \
+	done
 
-clean-%-stamp:
-	rm -rf build/test-$*
+override_dh_auto_build:
+	for v in $(PY3VERSIONS); do \
+		python$$v setup.py build; \
+		python$$v-dbg setup.py build; \
+	done
+	for v in $(PY3VERSIONS); do \
+		PYTHON=python$$v PY2TO3=2to3-$$v make py3; \
+		mv py3 py3-$$v/; \
+		python$$v py3-$$v/setup.py build; \
+		python$$v-dbg py3-$$v/setup.py build; \
+	done
+
+override_dh_auto_install:
+	for v in $(PYVERSIONS); do \
+		python$$v setup.py install --root=$(CURDIR)/debian/tmp --install-layout=deb; \
+		python$$v-dbg setup.py install --root=$(CURDIR)/debian/tmp --install-layout=deb; \
+	done
+	for v in $(PY3VERSIONS); do \
+		python$$v py3-$$v/setup.py install --root=$(CURDIR)/debian/tmp --install-layout=deb; \
+		python$$v-dbg py3-$$v/setup.py install --root=$(CURDIR)/debian/tmp --install-layout=deb; \
+	done
 
 override_dh_installchangelogs:
-	dh_installchangelogs HISTORY
+	dh_installchangelogs HISTORY.rst
 
 override_dh_strip:
-	dh_strip --dbg-package=python-setproctitle-dbg
+ifeq (,$(findstring nostrip,$(DEB_BUILD_OPTIONS)))
+	dh_strip -ppython-setproctitle --dbg-package=python-setproctitle-dbg
+	cd debian/python-setproctitle-dbg/usr/lib/debug/usr/lib && mv pyshared pymodules
+	dh_strip -ppython3-setproctitle --dbg-package=python3-setproctitle-dbg
+endif
 
-override_dh_auto_test: $(PYVERSIONS:%=test-%-stamp)
-test-%-stamp:	
+override_dh_auto_test:
 ifeq (,$(findstring nocheck,$(DEB_BUILD_OPTIONS)))
-	rm -rf build/test-$*
-	mkdir build/test-$*
-	python$* setup.py install_lib -d build/test-$*
 ifeq (,$(findstring kfreebsd,$(shell dpkg-architecture -qDEB_BUILD_ARCH_OS)))
-	PYTHONPATH=build/test-$* python$* /usr/bin/nosetests -v tests
+	for v in $(PYVERSIONS); do \
+		rm -rf tests/pyrun2; \
+		python$$v setup.py install_lib -d build/test.$$v; \
+		PYTHON=python$$v make tests/pyrun2; \
+		PYTHONPATH=build/test.$$v:. nosetests-$$v -v tests; \
+	done
+	for v in $(PY3VERSIONS); do \
+		rm -rf tests/pyrun3; \
+		python$$v py3-$$v/setup.py install_lib -d build/test.$$v; \
+		PYTHON=python$$v make py3-$$v/tests/pyrun3; \
+		PYTHONPATH=build/test.$$v:. nosetests-$$v -v py3-$$v/tests; \
+	done
 endif
-	touch test-python-$*-stamp
 endif
 
-.PHONY: override_dh_auto_clean override_dh_installchangelogs override_dh_strip override_dh_auto_test
+.PHONY: override_dh_auto_clean override_dh_auto_build override_dh_auto_install override_dh_installchangelogs override_dh_strip override_dh_auto_test
