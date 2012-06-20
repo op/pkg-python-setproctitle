@@ -1,3 +1,9 @@
+python-setproctitle (1.1.6-1) unstable; urgency=low
+
+  * New upstream version (Closes: #675423).
+
+ -- Örjan Persson <orange@fobie.net>  Wed, 20 Jun 2012 23:35:02 +0200
+
 python-setproctitle (1.0.1-1) unstable; urgency=low
 
   * New upstream version.
