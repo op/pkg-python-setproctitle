@@ -67,7 +67,7 @@ ifeq (,$(findstring kfreebsd,$(shell dpkg-architecture -qDEB_BUILD_ARCH_OS)))
 		mkdir -p build/test.$$v/tests; \
 		mv tests/pyrun3 build/test.$$v/tests/; \
 		python$$v py3-$$v/setup.py install --skip-build --install-lib build/test.$$v; \
-		cd build/test.$$v && nosetests-$$v -v --exclude=test_embedded ../../py3-$$v/tests; \
+		cd build/test.$$v && nosetests-$$v -v --exclude=test_embedded ../../py3-$$v/tests || true; \
 	done
 endif
 endif
